@@ -355,4 +355,4 @@ With a single configuration change (`CUDF_USE_PANDAS=true`), the application can
 
 # 📄 License
 
-This project was developed as part of the **Google Cloud × NVIDIA AI Hackathon** and is intended for educational, research, and demonstration purposes.
+This project was developed as part of the **Gen AI Academy APAC Edition Prototype Submission** and is intended for educational, research, and demonstration purposes.
