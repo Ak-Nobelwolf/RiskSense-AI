@@ -43,3 +43,7 @@ venv/
 # Deployment Artifacts
 cloudbuild.yaml
 .github/
+
+# Submission artifacts
+Prototype Submission Deck _ Gen AI Academy APAC Edition.pptx
+submission-deck-content.md
