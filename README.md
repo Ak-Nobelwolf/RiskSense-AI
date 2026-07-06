@@ -2,7 +2,7 @@
 
 **Should I go outside now, later, or not today?**
 
-RiskSense AI combines NASA EONET hazard data, OpenWeatherMap forecasts, USGS earthquakes, and air quality into a single 0–100 risk score with forward-looking ML predictions and actionable recommendations. Deployable locally or on Google Cloud free tier.
+RiskSense AI is a deployed outdoor safety decision-support tool that combines hazard, weather, air-quality, and earthquake data into a single 0-100 risk score with short-term forecast output and plain-English guidance. It helps users make faster decisions about whether conditions are safe enough to go outside.
 
 ## Data Sources
 
@@ -64,57 +64,27 @@ project-root/
 └── sql/                       # DuckDB schemas (local dev only)
 ```
 
-## Setup
+## What It Does
 
-### Prerequisites
+- Lets a user search any location and see a current safety assessment
+- Ingests live hazard, weather, air-quality, and earthquake data
+- Builds features, scores risk, and generates 6h/12h forecast output
+- Renders an interactive dashboard with a hazard map, charts, and a risk summary
+- Uses Gemini API for AI-generated explanations when available, with a rule-based fallback
 
-- Python 3.10+
-- (Optional) GCP free tier account for cloud deployment
+## Built With
 
-### Installation
-
-```bash
-git clone <repo-url>
-cd RiskSense AI
-python -m venv .venv
-.venv\Scripts\activate         # Windows
-source .venv/bin/activate      # Linux/Mac
-pip install -r requirements.txt
-```
-
-### Configuration
-
-Copy `.env.example` to `.env` and fill in the fields you need. At minimum:
-
-```env
-# Local dev only: leave empty for DuckDB mode
-GOOGLE_APPLICATION_CREDENTIALS=
-GCP_PROJECT_ID=
-GCS_BUCKET_NAME=
-BIGQUERY_DATASET=risksense
-
-# Without this, weather uses mock data
-OPENWEATHERMAP_API_KEY=
-
-# Optional: AI explanations vs rule-based fallback
-GEMINI_API_KEY=
-```
-
-## Usage (Local)
-
-```bash
-uvicorn src.api.app:app --host 0.0.0.0 --port 8503
-```
-
-Open http://localhost:8503 in your browser.
-
-**First visit:** Tables are created automatically on startup. Hit the refresh endpoint to hydrate data:
-
-```bash
-curl -X POST "http://localhost:8503/api/refresh?lat=19.076&lon=72.8777&name=Mumbai"
-```
-
-Then reload the dashboard.
+- **FastAPI** for the web app and API layer
+- **Jinja2** for server-rendered templates
+- **Plotly** for time-series charts
+- **Leaflet** for the interactive hazard map
+- **Tailwind CSS** for the UI styling
+- **Pandas / NumPy** for data processing
+- **scikit-learn** for the forecast model
+- **DuckDB** for local analytics support
+- **BigQuery** and **Cloud Storage** for Google Cloud storage and analytics support
+- **NASA EONET**, **OpenWeatherMap**, **USGS**, and **Nominatim** as data sources
+- **Gemini API** for AI-generated explanations
 
 ### Pipeline Steps
 
@@ -149,15 +119,9 @@ RiskSense AI can run on local DuckDB (CPU) or Cloud BigQuery:
 | Query (100 rows) | ~0.001s | ~0.4s | 0.002× |
 | Full pipeline (incl. API calls) | ~25s | ~30s | 0.83× |
 
-BigQuery adds network latency per query, but scales to much larger datasets and requires zero local infrastructure.
+These benchmark values are simulated in the app UI to illustrate the relative tradeoff between local DuckDB and cloud BigQuery paths. BigQuery adds network latency per query, but scales to much larger datasets and requires zero local infrastructure.
 
 ## Cloud Deployment
-
-```bash
-gcloud run deploy risksense-ai --source . --region=asia-south1 \
-  --set-env-vars=GCP_PROJECT_ID=risksense-ai,GCS_BUCKET_NAME=risksense-data,BIGQUERY_DATASET=risksense,OPENWEATHERMAP_API_KEY=your_key,GEMINI_API_KEY=your_key \
-  --allow-unauthenticated
-```
 
 Deploys to Cloud Run (free tier: 2M requests/month). Tables created on first request. Data persisted in BigQuery + GCS across container restarts.
 
@@ -171,23 +135,5 @@ pytest tests/ -v
 
 - **Batch refresh**: Not real-time; manual or cron-triggered pipeline
 - **Simple forecast**: Random Forest baseline; no deep learning
-- **Mock USGS data**: Behind corporate proxy (falls back to generated data)
 - **API dependency**: EONET, OpenWeatherMap availability affects pipeline
 - **No user auth**: Single-user dashboard
-
-## Roadmap
-
-- [x] Phase 1: Skeleton + schemas
-- [x] Phase 2: Data ingestion (EONET, OWM, USGS, AQ)
-- [x] Phase 3: Transformation + features
-- [x] Phase 4: Risk scoring + ML forecast
-- [x] Phase 5: Explanation engine
-- [x] Phase 6: FastAPI dashboard + SSE pipeline
-- [x] Phase 7: Cloud deployment (GCS + BigQuery + Cloud Run)
-- [ ] Real-time streaming
-- [ ] Mobile notifications
-- [ ] Historical trend analysis
-
-## License
-
-MIT
