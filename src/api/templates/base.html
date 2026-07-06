@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RiskSense AI{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Barlow', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%233B82F6'/><text x='50' y='68' font-size='40' font-weight='700' text-anchor='middle' fill='white' font-family='Barlow Condensed'>A</text></svg>">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <nav class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14 gap-2">
+                <a href="/" class="flex items-center gap-2 shrink-0">
+                    <span class="text-lg font-bold tracking-tight">RiskSense <span class="text-blue-600">AI</span></span>
+                </a>
+
+                <div class="relative flex-1 max-w-xs mx-2">
+                    <input id="loc-search" type="text" placeholder="Search location..."
+                           class="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40">
+                    <div id="loc-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50"></div>
+                </div>
+
+                <button id="ham-btn" class="md:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-100" onclick="toggleMenu()" aria-label="Menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div class="hidden md:flex items-center gap-0.5">
+                    <a href="/" data-loc-aware class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 {% if request.url.path == '/' %}text-blue-600 font-semibold{% else %}text-slate-500{% endif %}">Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="mobile-nav" class="hidden md:hidden bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-col gap-1">
+            <a href="/" data-loc-aware class="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 {% if request.url.path == '/' %}text-blue-600 font-semibold{% else %}text-slate-500{% endif %}">Dashboard</a>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="text-center text-slate-400 text-xs py-6 border-t border-slate-200 px-4">
+        RiskSense AI &mdash; Data from NASA EONET &amp; OpenWeatherMap
+    </footer>
+
+    <script>
+    const searchInput = document.getElementById('loc-search');
+    const dropdown = document.getElementById('loc-dropdown');
+    let debounceTimer;
+
+    function makeQS(lat, lon, name) {
+        const p = new URLSearchParams();
+        if (lat) p.set('lat', lat);
+        if (lon) p.set('lon', lon);
+        if (name) p.set('name', name);
+        return p.toString();
+    }
+
+    function showOverlay(name) {
+        const el = document.getElementById('loading-location');
+        if (el) el.textContent = name || '';
+        const o = document.getElementById('loading-overlay');
+        if (o) o.classList.remove('hidden');
+    }
+
+    function hideOverlay() {
+        const o = document.getElementById('loading-overlay');
+        if (o) o.classList.add('hidden');
+    }
+
+    function showToast(msg) {
+        const el = document.getElementById('toast-message');
+        if (el) el.textContent = msg;
+        const t = document.getElementById('error-toast');
+        if (t) { t.classList.remove('hidden'); setTimeout(dismissToast, 8000); }
+    }
+
+    function dismissToast() {
+        const t = document.getElementById('error-toast');
+        if (t) t.classList.add('hidden');
+    }
+
+    function toggleMenu() {
+        const m = document.getElementById('mobile-nav');
+        if (m) m.classList.toggle('hidden');
+    }
+
+    function runPipeline(lat, lon, name, thenRedirect) {
+        showOverlay(name);
+        const stepEl = document.getElementById('loading-step');
+        const qs = makeQS(lat, lon, name);
+        const es = new EventSource('/api/refresh/stream?' + qs);
+        es.onmessage = function(e) {
+            var d = JSON.parse(e.data);
+            if (stepEl) stepEl.textContent = d.step;
+            if (d.status === 'complete') {
+                es.close();
+                hideOverlay();
+                window.location.href = (thenRedirect === true ? '/' : thenRedirect) + '?' + d.qs + '&_=' + Date.now();
+            } else if (d.status === 'error') {
+                es.close();
+                hideOverlay();
+                showToast(d.step);
+            }
+        };
+        es.onerror = function() {
+            es.close();
+            hideOverlay();
+            showToast('Pipeline request failed');
+            if (thenRedirect) {
+                window.location.href = (thenRedirect === true ? '/' : thenRedirect) + '?' + qs;
+            }
+        };
+    }
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        if (q.length < 2) { dropdown.classList.add('hidden'); return; }
+        debounceTimer = setTimeout(() => {
+            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=5&accept-language=en')
+                .then(r => r.json())
+                .then(data => {
+                    dropdown.innerHTML = '';
+                    if (!data.length) { dropdown.classList.add('hidden'); return; }
+                    data.forEach(function(item) {
+                        const div = document.createElement('div');
+                        div.className = 'px-3 py-2 text-sm cursor-pointer border-b border-slate-100 last:border-0 text-slate-700 hover:bg-blue-50 transition-colors';
+                        div.textContent = item.display_name;
+                        div.addEventListener('click', function() {
+                            const name = item.display_name.split(',')[0];
+                            dropdown.classList.add('hidden');
+                            runPipeline(item.lat, item.lon, name, '/');
+                        });
+                        dropdown.appendChild(div);
+                    });
+                    dropdown.classList.remove('hidden');
+                })
+                .catch(function() { dropdown.classList.add('hidden'); });
+        }, 400);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    document.querySelectorAll('[data-loc-aware]').forEach(function(link) {
+        const params = new URLSearchParams(window.location.search);
+        const qs = params.toString();
+        if (qs) {
+            link.href = link.getAttribute('href') + '?' + qs;
+            if (link.dataset.href) link.href = link.dataset.href + '?' + qs;
+        }
+    });
+
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('name');
+        if (name && searchInput) searchInput.value = name.replace(/_/g, ' ');
+    })();
+    </script>
+
+<div id="loading-overlay" class="fixed inset-0 z-[100] bg-slate-800/60 backdrop-blur-sm flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm mx-4 border border-slate-200">
+        <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <p class="text-slate-700 font-medium">Analyzing <span id="loading-location"></span></p>
+        <p id="loading-step" class="text-slate-400 text-sm mt-1">Starting pipeline&hellip;</p>
+    </div>
+</div>
+
+<div id="error-toast" class="fixed bottom-6 right-6 z-[90] bg-red-500 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium hidden items-center gap-3 max-w-sm">
+    <span id="toast-message" class="flex-1"></span>
+    <button onclick="dismissToast()" class="text-white/70 hover:text-white font-bold shrink-0">&times;</button>
+</div>
+
+</body>
+</html>

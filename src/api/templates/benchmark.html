@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Benchmark — RiskSense AI{% endblock %}
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-2">CPU vs GPU Benchmark &mdash; {{ location.name }}</h1>
+<p class="text-slate-500 mb-6">Pipeline task comparison: pandas (CPU) vs cuDF (GPU)</p>
+
+{% if tasks %}
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Per-Task Performance</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-slate-400 uppercase text-xs tracking-wide border-b border-slate-200">
+                    <th class="pb-3 pr-6">Task</th>
+                    <th class="pb-3 pr-6 text-right">CPU (ms)</th>
+                    <th class="pb-3 pr-6 text-right">GPU (ms)</th>
+                    <th class="pb-3 text-right">Speedup</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tasks %}
+                <tr class="border-b border-slate-100">
+                    <td class="py-3 pr-6 font-medium text-slate-700">{{ t.task }}</td>
+                    <td class="py-3 pr-6 text-right font-mono text-slate-600">{{ "%.1f"|format(t.cpu_ms) }}</td>
+                    <td class="py-3 pr-6 text-right font-mono text-emerald-600">{{ "%.1f"|format(t.gpu_ms) }}</td>
+                    <td class="py-3 text-right font-mono font-bold {% if t.speedup|replace('x','')|float > 1 %}text-emerald-600{% else %}text-slate-500{% endif %}">{{ t.speedup }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Overall Speedup</div>
+        <div class="text-3xl font-bold text-emerald-600">{{ total_speedup }}<span class="text-sm font-normal text-slate-400">x</span></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Avg Speedup Across Sizes</div>
+        <div class="text-3xl font-bold text-emerald-600">{{ avg_speedup }}<span class="text-sm font-normal text-slate-400">x</span></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Max Speedup</div>
+        <div class="text-3xl font-bold text-emerald-600">{{ max_speedup }}<span class="text-sm font-normal text-slate-400">x</span></div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Processing Time by Dataset Size</h2>
+        <div id="timeChart"></div>
+    </div>
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Rows per Second</h2>
+        <div id="rowsChart"></div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Improvement Percentage</h2>
+    <div class="space-y-3">
+        {% for item in improvement_pct %}
+        <div class="flex items-center gap-4">
+            <span class="text-sm font-medium text-slate-600 w-24">{{ item.size }} rows</span>
+            <div class="flex-1 bg-slate-200 rounded-full h-4 overflow-hidden">
+                <div class="h-full rounded-full bg-emerald-500" style="width: {{ item.pct }}%;"></div>
+            </div>
+            <span class="text-sm font-bold text-emerald-600 w-16 text-right">{{ "%.0f"|format(item.pct) }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="mt-6 text-xs text-slate-400">
+    * Simulated benchmark: GPU times estimated at 15-25% of CPU times, consistent with RAPIDS/cuDF on NVIDIA GPUs.
+    Install cuDF for real hardware benchmarks.
+</div>
+
+<script>
+const results = {{ results|tojson }};
+const sizes = results.map(r => String(r.dataset_size));
+
+Plotly.newPlot('timeChart', [
+    { x: sizes, y: results.map(r => r.cpu_time_ms), type: 'bar', name: 'CPU', marker: { color: '#f59e0b' } },
+    { x: sizes, y: results.map(r => r.gpu_time_ms), type: 'bar', name: 'GPU', marker: { color: '#10b981' } },
+], { margin: { t: 10, r: 10, b: 40, l: 50 }, height: 300, barmode: 'group', yaxis: { title: 'Time (ms)' } }, { responsive: true });
+
+Plotly.newPlot('rowsChart', [
+    { x: sizes, y: results.map(r => r.cpu_rows_per_sec), type: 'bar', name: 'CPU', marker: { color: '#f59e0b' } },
+    { x: sizes, y: results.map(r => r.gpu_rows_per_sec), type: 'bar', name: 'GPU', marker: { color: '#10b981' } },
+], { margin: { t: 10, r: 10, b: 40, l: 50 }, height: 300, barmode: 'group', yaxis: { title: 'Rows / Second' } }, { responsive: true });
+</script>
+{% endif %}
+
+{% endblock %}

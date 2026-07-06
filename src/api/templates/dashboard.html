@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% block title %}{% if location %}Dashboard — {% endif %}RiskSense AI{% endblock %}
+{% block head %}
+{% if location %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endif %}
+{% endblock %}
+{% block content %}
+
+{% if not location %}
+<!-- LANDING -->
+<div class="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+  <div class="text-6xl mb-6 opacity-60">&#127758;</div>
+  <h1 class="text-4xl font-bold text-slate-800 mb-3">RiskSense <span class="text-blue-600">AI</span></h1>
+  <p class="text-xl text-slate-500 mb-2">Environmental Risk Intelligence</p>
+  <p class="text-slate-400 mb-8 max-w-md">Search for a city to see real-time environmental risk data, active hazards, and forecasts.</p>
+  <div class="flex flex-wrap justify-center gap-3">
+    <button onclick="runPipeline(19.076,72.8777,'Mumbai','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">Mumbai, India</button>
+    <button onclick="runPipeline(28.7041,77.1025,'Delhi','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">Delhi, India</button>
+    <button onclick="runPipeline(51.5074,-0.1278,'London','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">London, UK</button>
+    <button onclick="runPipeline(40.7128,-74.006,'New_York','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">New York, USA</button>
+    <button onclick="runPipeline(35.6762,139.6503,'Tokyo','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">Tokyo, Japan</button>
+    <button onclick="runPipeline(-33.8688,151.2093,'Sydney','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition-all">Sydney, Australia</button>
+  </div>
+</div>
+
+{% elif not current %}
+<!-- NO DATA YET -->
+<div class="flex flex-col items-center justify-center min-h-[40vh] text-center px-4">
+  <div class="text-5xl mb-4 opacity-50">&#9203;</div>
+  <h2 class="text-2xl font-semibold text-slate-600 mb-2">Acquiring Data</h2>
+  <p class="text-slate-400">Analyzing conditions for <strong>{{ location.name }}</strong>. This usually takes a few seconds.</p>
+  <p class="text-slate-400 text-sm mt-2">Refresh the page shortly, or try searching again.</p>
+</div>
+
+{% else %}
+
+<!-- HERO INSTRUMENT PANEL -->
+<div class="hero-panel px-4 pt-5 pb-6 md:px-10 md:py-10 mb-6">
+  <div class="ambient-bar absolute top-0 left-0 right-0"></div>
+  <div class="flex flex-col items-center md:flex-row md:items-center md:justify-between gap-6">
+    <div class="flex-1 text-center md:text-left">
+      <div class="flex items-center justify-center md:justify-start gap-3 mb-1">
+        <h1 class="text-xl md:text-2xl font-bold text-slate-800">{{ location.name }}</h1>
+        {% if location.region or location.country %}
+        <span class="text-sm text-slate-400 hidden sm:inline">&middot; {{ location.region }}{% if location.country and location.region %}, {% endif %}{{ location.country }}</span>
+        {% endif %}
+      </div>
+      <div class="flex items-center justify-center md:justify-start gap-3 text-xs text-slate-400 mb-4" data-mono>
+        <span>{{ "%.4f"|format(location.lat) }}&deg;N, {{ "%.4f"|format(location.lon) }}&deg;E</span>
+        <span>&middot;</span>
+        <span>Updated {{ last_refresh.formatted if last_refresh else "—" }}</span>
+      </div>
+      <div class="scale-mark flex items-center justify-center md:justify-start gap-2 mb-1">
+        <span class="text-emerald-600 font-semibold">0</span>
+        <span class="text-amber-500 font-semibold">40</span>
+        <span class="text-red-500 font-semibold">70</span>
+        <span class="text-red-500 font-semibold">100</span>
+      </div>
+      <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-0.5">Risk Score</div>
+      <div class="text-xl md:text-2xl font-semibold {% if current.color == 'green' %}text-emerald-600{% elif current.color == 'orange' %}text-amber-500{% else %}text-red-500{% endif %}">
+        {{ current.recommendation }}
+      </div>
+      <div class="text-lg text-slate-400">{{ current.band }}</div>
+    </div>
+
+    <!-- SVG gauge ring -->
+    <div class="group relative shrink-0 w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 {% if current.color == 'green' %}text-emerald-600{% elif current.color == 'orange' %}text-amber-500{% else %}text-red-500{% endif %}">
+      <svg width="100%" height="100%" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" stroke-width="6" />
+        <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="6"
+                stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="{{ 264 - (264 * current.score / 100) }}"
+                class="status-ring" transform="rotate(-90 50 50)" />
+        <text x="50" y="64" text-anchor="middle" font-family="'Barlow Condensed',sans-serif"
+              font-size="56" font-weight="700" fill="currentColor">{{ "%.0f"|format(current.score) }}</text>
+      </svg>
+      <div class="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-slate-700 text-white px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
+        Risk Score
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS ROW -->
+<div class="grid grid-cols-3 gap-2 md:gap-3 mb-6">
+  <div class="instrument-card px-4 py-4 md:px-5 md:py-5 text-center">
+    <div class="stat-label">Hazards within 50km</div>
+    <div class="stat-value text-slate-800 mt-1">{{ current.hazard_count_50km }}</div>
+  </div>
+  <div class="instrument-card px-4 py-4 md:px-5 md:py-5 text-center">
+    <div class="stat-label">Nearest Hazard</div>
+    <div class="stat-value text-slate-800 mt-1">
+      {% if current.nearest_hazard_distance_km is not none and current.nearest_hazard_distance_km >= 0 %}
+        {{ "%.1f"|format(current.nearest_hazard_distance_km) }}
+      {% else %}
+        &mdash;
+      {% endif %}
+    </div>
+    <div class="text-xs text-slate-400 mt-0.5">km</div>
+  </div>
+  <div class="instrument-card px-4 py-4 md:px-5 md:py-5 text-center">
+    <div class="stat-label">Weather</div>
+    <div class="stat-value text-slate-800 mt-1">{% if weather %}{{ weather.temperature }}&deg;{% else %}&mdash;{% endif %}</div>
+    <div class="text-xs text-slate-400 mt-0.5">{% if weather %}{{ weather.humidity }}% &middot; {{ weather.wind_speed }} km/h{% endif %}</div>
+  </div>
+</div>
+
+<!-- WEATHER DETAIL + MAP + RISK SUMMARY -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  {% if weather %}
+  <div class="instrument-card p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Current Weather</h2>
+      <span class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{{ weather.condition }}</span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">Temperature</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.temperature }} &deg;C</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">Humidity</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.humidity }}%</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">Wind Speed</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.wind_speed }} km/h</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">Wind Gust</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.wind_gust }} km/h</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">Pressure</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.pressure }} hPa</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">UV Index</div>
+        <div class="text-lg sm:text-xl font-bold text-slate-800" data-mono>{{ weather.uv_index }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="instrument-card p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Hazard Map</h2>
+      <span class="text-xs text-slate-400">{{ hazard_count }} active</span>
+    </div>
+    {% if hazards %}
+    <div id="dash-map" class="w-full rounded-lg border border-slate-200" style="height: 240px; isolation: isolate;"></div>
+    {% else %}
+    <div class="flex items-center justify-center rounded-lg bg-slate-50 border border-dashed border-slate-200" style="height: 240px;">
+      <span class="text-sm text-slate-400">No active hazards in this region</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if weather and air_quality %}
+  <div class="instrument-card p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Air Quality</h2>
+      {% set aqi = air_quality.aqi %}
+      {% if aqi <= 2 %}
+        <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{{ air_quality.aqi_label }}</span>
+      {% elif aqi <= 3 %}
+        <span class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded">{{ air_quality.aqi_label }}</span>
+      {% else %}
+        <span class="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded">{{ air_quality.aqi_label }}</span>
+      {% endif %}
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">AQI <span class="text-[10px] font-normal text-slate-400">(1-5)</span></div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.aqi }}</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">1=Good &middot; 5=Very Poor</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">PM2.5</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.pm2_5 }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">PM10</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.pm10 }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">O&zwj;3</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.o3 }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">CO</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.co }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">NO</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.no }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">NO&zwj;2</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.no2 }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">SO&zwj;2</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.so2 }} &mu;g/m&sup3;</div>
+      </div>
+      <div class="text-center py-3 bg-slate-50 rounded-lg">
+        <div class="stat-label mb-0.5">NH&zwj;3</div>
+        <div class="text-xl font-bold text-slate-800" data-mono>{{ air_quality.nh3 }} &mu;g/m&sup3;</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if explanation %}
+  <div class="instrument-card p-5">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Risk Summary</h2>
+    <p class="text-sm text-slate-600 leading-relaxed mb-4">{{ explanation.summary }}</p>
+    {% if explanation.reasons and explanation.reasons|length > 0 %}
+    <div class="space-y-2">
+      {% for reason in explanation.reasons %}
+      <div class="flex items-start gap-2 text-sm">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold shrink-0 mt-0.5">{{ loop.index }}</span>
+        <span class="text-slate-600">{{ reason }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- FORECAST + BREAKDOWN -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="instrument-card p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Risk Forecast</h2>
+      {% if metrics %}
+      <div class="flex items-center gap-3 text-xs">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> 6h <strong class="text-slate-700">{{ metrics.risk_6h }}</strong></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span> 12h <strong class="text-slate-700">{{ metrics.risk_12h }}</strong></span>
+        <span class="{% if metrics.trend == 'worsening' %}text-red-500{% else %}text-emerald-600{% endif %} font-semibold">
+          {{ '&#8593;'|safe if metrics.trend == 'worsening' else '&#8595;'|safe }} {{ metrics.trend|capitalize }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+    {% if risk_chart %}
+    <div id="dash-risk-chart" style="height: 220px;"></div>
+    {% else %}
+    <div class="flex items-center justify-center rounded-lg bg-slate-50 border border-dashed border-slate-200" style="height: 220px;">
+      <span class="text-sm text-slate-400">No forecast data</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="instrument-card p-5">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Risk Contribution</h2>
+    <div class="space-y-2 md:space-y-3">
+      {% set components = [
+        ('Hazard Events', current.component_hazard, 'bg-blue-500'),
+        ('Proximity', current.component_proximity, 'bg-amber-500'),
+        ('Weather', current.component_weather, 'bg-sky-500'),
+        ('Trend', current.component_trend, 'bg-purple-500'),
+        ('Multi-Hazard', current.component_multi_hazard, 'bg-red-500'),
+        ('Air Quality', current.component_air_quality, 'bg-teal-500'),
+      ] %}
+      {% for label, val, bar_color in components %}
+      <div>
+        <div class="flex justify-between text-xs mb-1">
+          <span class="text-slate-500">{{ label }}</span>
+          <span class="font-semibold text-slate-700" data-mono>{{ "%.1f"|format(val) }}</span>
+        </div>
+        <div class="breakdown-bar">
+          <div class="breakdown-bar-fill {{ bar_color }}" style="width: {{ "%.0f"|format(val) }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- WEATHER CHART (full width) -->
+{% if weather_chart %}
+<div class="mb-6">
+  <div class="instrument-card p-5">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Weather Conditions</h2>
+    <div id="dash-weather-chart" style="height: 220px;"></div>
+  </div>
+</div>
+{% endif %}
+
+<!-- BENCHMARK (expandable) -->
+{% if benchmark_tasks %}
+<div class="instrument-card p-5 mb-6">
+  <button onclick="toggleBenchmark()" class="w-full flex items-center justify-between text-left cursor-pointer">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">CPU vs GPU Performance</h2>
+    <span id="bench-toggle" class="text-sm text-slate-400 transition-transform duration-200">&#9654;</span>
+  </button>
+  <div id="bench-content" class="expandable-content">
+    <div class="pt-4 border-t border-slate-200 mt-3">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-left text-slate-400 uppercase tracking-wider">
+              <th class="pb-2 pr-4 font-medium">Task</th>
+              <th class="pb-2 pr-4 text-right font-medium">CPU (ms)</th>
+              <th class="pb-2 pr-4 text-right font-medium">GPU (ms)</th>
+              <th class="pb-2 text-right font-medium">Speedup</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in benchmark_tasks %}
+            <tr class="border-t border-slate-100">
+              <td class="py-2 pr-4 text-slate-700">{{ t.task }}</td>
+              <td class="py-2 pr-4 text-right text-slate-500" data-mono>{{ "%.1f"|format(t.cpu_ms) }}</td>
+              <td class="py-2 pr-4 text-right text-emerald-600" data-mono>{{ "%.1f"|format(t.gpu_ms) }}</td>
+              <td class="py-2 text-right font-semibold {% if t.speedup|replace('x','')|float > 1 %}text-emerald-600{% else %}text-slate-400{% endif %}" data-mono>{{ t.speedup }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4">
+        <div class="text-center">
+          <div class="stat-label">Overall Speedup</div>
+          <div class="text-lg font-bold text-emerald-600" data-mono>{{ total_speedup }}<span class="text-xs text-slate-400">x</span></div>
+        </div>
+        <div class="text-center">
+          <div class="stat-label">Average</div>
+          <div class="text-lg font-bold text-emerald-600" data-mono>{{ avg_speedup }}<span class="text-xs text-slate-400">x</span></div>
+        </div>
+        <div class="text-center">
+          <div class="stat-label">Max</div>
+          <div class="text-lg font-bold text-emerald-600" data-mono>{{ max_speedup }}<span class="text-xs text-slate-400">x</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+{% if hazards %}
+const dashHazards = {{ hazards|tojson }};
+const dashMap = L.map('dash-map').setView([{{ location.lat }}, {{ location.lon }}], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OSM' }).addTo(dashMap);
+L.marker([{{ location.lat }}, {{ location.lon }}]).bindPopup('{{ location.name }}').addTo(dashMap);
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 10000, color: '#059669', fillOpacity: 0.05 }).addTo(dashMap);
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 50000, color: '#f59e0b', fillOpacity: 0.03 }).addTo(dashMap);
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 100000, color: '#ef4444', fillOpacity: 0.02 }).addTo(dashMap);
+const dashColors = { 'Wildfires': '#ef4444', 'Severe Storms': '#7c3aed', 'Floods': '#3b82f6', 'Volcanoes': '#6b21a8', 'Dust and Haze': '#f59e0b', 'Landslides': '#059669', 'Droughts': '#b45309', 'Extreme Temperature': '#ec4899', 'Earthquakes': '#dc2626' };
+dashHazards.forEach(function(h) {
+  var c = dashColors[h.category] || '#94a3b8';
+  var iconHtml = h.category === 'Earthquakes'
+    ? '<div style="background:'+c+';width:14px;height:14px;border-radius:2px;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);transform:rotate(45deg);"></div>'
+    : '<div style="background:'+c+';width:10px;height:10px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>';
+  var sz = h.category === 'Earthquakes' ? [14,14] : [10,10];
+  L.marker([h.latitude, h.longitude], {
+    icon: L.divIcon({ className: '', html: iconHtml, iconSize: sz, iconAnchor: [sz[0]/2, sz[1]/2] })
+  }).bindPopup('<b>'+h.title+'</b><br>'+h.category+(h.magnitude ? '<br>M'+h.magnitude.toFixed(1)+' | '+h.depth_km+'km deep' : '')+(h.event_timestamp ? '<br>'+String(h.event_timestamp).slice(0,10) : '')).addTo(dashMap);
+});
+{% endif %}
+
+{% if risk_chart %}
+(function() {
+  var rd = {{ risk_chart|tojson }};
+  var tr = [{ x: rd.timestamps, y: rd.risk_score, type: 'scatter', mode: 'lines+markers', name: 'Current', line: { color: '#f59e0b', width: 2 } }];
+  if (rd.predicted_6h && rd.predicted_6h.length) tr.push({ x: rd.timestamps, y: rd.predicted_6h, type: 'scatter', mode: 'lines+markers', name: '6h Forecast', line: { color: '#ef4444', width: 1.5, dash: 'dash' } });
+  if (rd.predicted_12h && rd.predicted_12h.length) tr.push({ x: rd.timestamps, y: rd.predicted_12h, type: 'scatter', mode: 'lines+markers', name: '12h Forecast', line: { color: '#991b1b', width: 1.5, dash: 'dot' } });
+  Plotly.newPlot('dash-risk-chart', tr, { margin: { t: 4, r: 8, b: 48, l: 36 }, height: 220, hovermode: 'x unified', xaxis: { automargin: true, tickangle: -45, nticks: 6, tickformat: '%H:%M' }, yaxis: { title: '', range: [0, 100] }, showlegend: false }, { responsive: true, displayModeBar: false });
+})();
+{% endif %}
+
+{% if weather_chart %}
+(function() {
+  var wd = {{ weather_chart|tojson }};
+  Plotly.newPlot('dash-weather-chart', [
+    { x: wd.timestamps, y: wd.temperature, type: 'scatter', mode: 'lines', name: 'Temp (C)', line: { color: '#ef4444', width: 1.5 }, yaxis: 'y' },
+    { x: wd.timestamps, y: wd.wind_speed, type: 'scatter', mode: 'lines', name: 'Wind (km/h)', line: { color: '#3b82f6', width: 1.5 }, yaxis: 'y2' },
+  ], { margin: { t: 4, r: 8, b: 48, l: 36 }, height: 220, hovermode: 'x unified', xaxis: { automargin: true, tickangle: -45, nticks: 8, tickformat: '%H:%M' }, yaxis: { title: '', showgrid: true }, yaxis2: { title: '', overlaying: 'y', side: 'right', showgrid: false }, showlegend: false }, { responsive: true, displayModeBar: false });
+})();
+{% endif %}
+
+function toggleBenchmark() {
+  var c = document.getElementById('bench-content');
+  var t = document.getElementById('bench-toggle');
+  if (!c || !t) return;
+  c.classList.toggle('open');
+  t.style.transform = c.classList.contains('open') ? 'rotate(90deg)' : 'rotate(0deg)';
+}
+</script>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{% if location %}Overview — {% endif %}RiskSense AI{% endblock %}
+{% block content %}
+
+{% if not location %}
+<div class="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+    <div class="text-6xl mb-6 opacity-60">&#127758;</div>
+    <h1 class="text-4xl font-bold text-slate-800 mb-3">RiskSense <span class="text-indigo-600">AI</span></h1>
+    <p class="text-xl text-slate-500 mb-2">Environmental Risk Intelligence</p>
+    <p class="text-slate-400 mb-8 max-w-md">Search for a city above to see real-time environmental risk data, active hazards, and forecasts.</p>
+    <div class="flex items-center gap-3 text-sm text-slate-400 mb-10">
+        <span class="flex items-center gap-1">&#128200; Risk Scoring</span>
+        <span class="text-slate-300">|</span>
+        <span class="flex items-center gap-1">&#127758; Hazard Map</span>
+        <span class="text-slate-300">|</span>
+        <span class="flex items-center gap-1">&#9729; Weather Data</span>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+        <button onclick="runPipeline(19.076,72.8777,'Mumbai','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">Mumbai, India</button>
+        <button onclick="runPipeline(28.7041,77.1025,'Delhi','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">Delhi, India</button>
+        <button onclick="runPipeline(51.5074,-0.1278,'London','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">London, UK</button>
+        <button onclick="runPipeline(40.7128,-74.006,'New_York','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">New York, USA</button>
+        <button onclick="runPipeline(35.6762,139.6503,'Tokyo','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">Tokyo, Japan</button>
+        <button onclick="runPipeline(-33.8688,151.2093,'Sydney','/')" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:border-indigo-300 hover:text-indigo-700 hover:shadow-md transition-all">Sydney, Australia</button>
+    </div>
+</div>
+{% elif current %}
+<div class="mb-8">
+    <div class="rounded-2xl p-8 text-center recommendation-glow-{{ 'safe' if current.color == 'green' else 'caution' if current.color == 'orange' else 'avoid' }}"
+         style="background: linear-gradient(135deg, white 0%, {{ 'rgba(16,185,129,0.08)' if current.color == 'green' else 'rgba(245,158,11,0.08)' if current.color == 'orange' else 'rgba(239,68,68,0.08)' }} 100%); border: 2px solid {{ current.color }};">
+        <div class="text-5xl mb-3">{{ current.emoji }}</div>
+        <h1 class="text-3xl font-bold mb-1" style="color: {{ current.color }};">{{ current.recommendation }}</h1>
+        <p class="text-lg text-slate-500 mb-4">{{ current.band }} &middot; {{ location.name }}{% if location.region %}, {{ location.region }}{% endif %}</p>
+        <div class="flex items-center justify-center gap-3">
+            <div class="text-5xl font-bold" style="color: {{ current.color }};">{{ "%.0f"|format(current.score) }}</div>
+            <span class="text-slate-400 text-lg">/ 100</span>
+        </div>
+        <div class="w-full max-w-md mx-auto mt-4 bg-slate-200 rounded-full h-3 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-1000 ease-out"
+                 style="width: {{ current.score }}%; background: {{ current.color }};"></div>
+        </div>
+        <p class="text-sm text-slate-400 mt-2">Risk Score</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="glass rounded-xl p-5 card-hover">
+        <div class="text-slate-400 text-sm font-medium mb-1">Location</div>
+        <div class="font-semibold">{{ location.name }}{% if location.region %}, {{ location.region }}{% endif %}{% if location.country %}, {{ location.country }}{% endif %}</div>
+        <div class="text-xs text-slate-400">{{ "%.4f"|format(location.lat) }}&deg;N, {{ "%.4f"|format(location.lon) }}&deg;E</div>
+    </div>
+    <div class="glass rounded-xl p-5 card-hover">
+        <div class="text-slate-400 text-sm font-medium mb-1">Last Updated</div>
+        <div class="font-semibold">{{ last_refresh.formatted if last_refresh else "—" }}</div>
+    </div>
+    <div class="glass rounded-xl p-5 card-hover">
+        <div class="text-slate-400 text-sm font-medium mb-1">Data Sources</div>
+        <div class="font-semibold"><span class="text-indigo-600">{{ stats.eonet_count }}</span> EONET &middot; <span class="text-indigo-600">{{ stats.weather_count }}</span> Weather &middot; <span class="text-indigo-600">{{ stats.risk_count }}</span> Risk rows</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Active Hazards (50km)</div>
+        <div class="text-3xl font-bold text-slate-800">{{ current.hazard_count_50km }}</div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Nearest Hazard</div>
+        <div class="text-3xl font-bold text-slate-800">{% if current.nearest_hazard_distance_km is not none and current.nearest_hazard_distance_km == current.nearest_hazard_distance_km %}{{ "%.1f"|format(current.nearest_hazard_distance_km) }}{% else %}N/A{% endif %} <span class="text-sm font-normal text-slate-400">km</span></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Nearest Type</div>
+        <div class="text-3xl font-bold text-slate-800">{% if current.nearest_hazard_type and current.nearest_hazard_type != "None" %}{{ current.nearest_hazard_type|capitalize }}{% else %}N/A{% endif %}</div>
+    </div>
+</div>
+
+{% if weather %}
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Current Weather</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="text-center">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Temperature</div>
+            <div class="text-2xl font-bold text-slate-800">{{ weather.temperature }} &deg;C</div>
+        </div>
+        <div class="text-center">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Humidity</div>
+            <div class="text-2xl font-bold text-slate-800">{{ weather.humidity }}%</div>
+        </div>
+        <div class="text-center">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Wind Speed</div>
+            <div class="text-2xl font-bold text-slate-800">{{ weather.wind_speed }} km/h</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif not current and location %}
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+    <div class="text-4xl mb-3">&#128200;</div>
+    <h2 class="text-xl font-semibold text-amber-800 mb-2">No Data Available</h2>
+    <p class="text-amber-600">No risk data for <strong>{{ location.name }}</strong>. Pipeline may still be running.</p>
+</div>
+{% endif %}
+{% endblock %}

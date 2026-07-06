@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Forecast — RiskSense AI{% endblock %}
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-2">Risk Forecast &mdash; {{ location.name }}</h1>
+<p class="text-slate-500 mb-6">Predicted risk trend and weather conditions</p>
+
+{% if metrics %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">6h Forecast Risk</div>
+        <div class="text-3xl font-bold text-slate-800">{{ metrics.risk_6h }}<span class="text-sm font-normal text-slate-400">/100</span></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">12h Forecast Risk</div>
+        <div class="text-3xl font-bold text-slate-800">{{ metrics.risk_12h }}<span class="text-sm font-normal text-slate-400">/100</span></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Trend (6h &rarr; 12h)</div>
+        <div class="text-3xl font-bold {% if metrics.trend == 'worsening' %}text-red-600{% else %}text-emerald-600{% endif %}">
+            {% if metrics.trend == 'worsening' %}&uarr; Worsening{% else %}&darr; Improving{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if risk_chart %}
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Risk Score (Current &amp; Forecast)</h2>
+    <div id="riskChart"></div>
+</div>
+{% endif %}
+
+{% if weather_chart %}
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Weather Conditions</h2>
+    <div id="weatherChart"></div>
+</div>
+{% endif %}
+
+{% if not risk_chart and not weather_chart %}
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+    <p class="text-amber-700">No forecast data available.</p>
+</div>
+{% endif %}
+
+<script>
+{% if risk_chart %}
+const riskData = {{ risk_chart|tojson }};
+const riskTraces = [];
+riskTraces.push({
+    x: riskData.timestamps, y: riskData.risk_score,
+    type: 'scatter', mode: 'lines+markers',
+    name: 'Current Risk', line: { color: '#f59e0b', width: 2 }
+});
+if (riskData.predicted_6h.length) {
+    riskTraces.push({
+        x: riskData.timestamps, y: riskData.predicted_6h,
+        type: 'scatter', mode: 'lines+markers',
+        name: '6h Forecast', line: { color: '#ef4444', width: 2, dash: 'dash' }
+    });
+}
+if (riskData.predicted_12h.length) {
+    riskTraces.push({
+        x: riskData.timestamps, y: riskData.predicted_12h,
+        type: 'scatter', mode: 'lines+markers',
+        name: '12h Forecast', line: { color: '#991b1b', width: 2, dash: 'dot' }
+    });
+}
+Plotly.newPlot('riskChart', riskTraces, {
+    margin: { t: 10, r: 20, b: 40, l: 50 },
+    height: 350, hovermode: 'x unified',
+    yaxis: { title: 'Risk Score (0-100)', range: [0, 100] }
+}, { responsive: true });
+{% endif %}
+
+{% if weather_chart %}
+const weatherData = {{ weather_chart|tojson }};
+const weatherTraces = [
+    { x: weatherData.timestamps, y: weatherData.temperature, type: 'scatter', mode: 'lines', name: 'Temperature (C)', line: { color: '#ef4444', width: 1 }, yaxis: 'y' },
+    { x: weatherData.timestamps, y: weatherData.wind_speed, type: 'scatter', mode: 'lines', name: 'Wind (km/h)', line: { color: '#3b82f6', width: 1 }, yaxis: 'y2' },
+    { x: weatherData.timestamps, y: weatherData.precipitation, type: 'scatter', mode: 'lines', name: 'Precip (mm)', line: { color: '#06b6d4', width: 1 }, yaxis: 'y3' }
+];
+Plotly.newPlot('weatherChart', weatherTraces, {
+    margin: { t: 10, r: 20, b: 40, l: 50 },
+    height: 300, hovermode: 'x unified',
+    yaxis: { title: 'C' },
+    yaxis2: { title: 'km/h', overlaying: 'y', side: 'right' },
+    yaxis3: { title: 'mm', overlaying: 'y', side: 'right' }
+}, { responsive: true });
+{% endif %}
+</script>
+{% endblock %}

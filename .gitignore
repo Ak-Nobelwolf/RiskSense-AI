@@ -1,0 +1,45 @@
+# Environment & Secrets
+.env
+.env.local
+.env.production
+.env.development
+
+# GCP Service Account Keys (CRITICAL)
+risksense-ai-*.json
+*.json
+
+# Data & Cache
+data/
+models/*.joblib
+*.duckdb
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+
+# IDEs & OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs & Temp
+*.log
+*.tmp
+
+# Deployment Artifacts
+cloudbuild.yaml
+.github/

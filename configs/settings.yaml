@@ -1,0 +1,90 @@
+region:
+  city: Mumbai
+  region: Maharashtra
+  country: India
+  latitude: 19.0760
+  longitude: 72.8777
+
+eonet:
+  base_url: "https://eonet.gsfc.nasa.gov/api/v3"
+  status: "open"
+  limit: 100
+
+weather:
+  provider: "openweathermap"
+  base_url: "https://api.openweathermap.org/data/2.5"
+  forecast_days: 2
+
+risk_scoring:
+  bands:
+    - { min: 0,  max: 39, label: "Safe" }
+    - { min: 40, max: 69, label: "Caution" }
+    - { min: 70, max: 100, label: "Avoid" }
+
+  hazard_weights:
+    wildfires: 30
+    severeStorms: 28
+    floods: 28
+    volcanoes: 30
+    dustHaze: 22
+    landslides: 25
+    droughts: 15
+    extremeTemperature: 20
+    seaLakeIce: 10
+    default: 15
+
+  proximity_bands_km: [10, 50, 100]
+  proximity_scores: [25, 15, 5]
+
+  multi_hazard_bonus: 5
+  max_multi_hazard_bonus: 15
+
+  weather_amplification:
+    high_wind_threshold: 30        # km/h
+    high_wind_score: 10
+    extreme_wind_threshold: 60
+    extreme_wind_score: 20
+    high_humidity_threshold: 70    # %
+    high_humidity_score: 5
+    heavy_rain_threshold: 10       # mm
+    heavy_rain_score: 10
+
+  air_quality:
+    aqi_threshold: 3
+    aqi_score: 15
+    aqi_high_score: 25
+    co_threshold: 10
+    co_score: 5
+    so2_threshold: 20
+    so2_score: 5
+
+  earthquake_magnitude:
+    mag_4_bonus: 5
+    mag_5_bonus: 10
+    mag_6_bonus: 15
+
+  trend:
+    worsening_threshold: 5
+    worsening_score: 10
+    improving_threshold: -5
+    improving_score: -5
+
+forecast:
+  model: "random_forest"
+  n_estimators: 100
+  max_depth: 10
+  test_size: 0.2
+  targets: ["risk_6h", "risk_12h"]
+
+explanation:
+  provider: "rules"  # "rules" or "gemini"
+  max_reasons: 3
+
+benchmark:
+  iterations: 3
+  dataset_sizes: [1000, 10000, 50000]
+
+gcp:
+  project_id: "${GCP_PROJECT_ID}"
+  bucket_name: "${GCS_BUCKET_NAME}"
+  bq_dataset: "${BIGQUERY_DATASET}"

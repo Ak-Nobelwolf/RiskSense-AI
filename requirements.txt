@@ -1,0 +1,46 @@
+# RiskSense AI — Core Dependencies
+# Install with: pip install -r requirements.txt
+
+# --- Data processing ---
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=12.0.0
+
+# --- Database ---
+duckdb>=0.9.0
+
+# --- Web framework ---
+fastapi==0.115.6
+starlette==0.41.3
+uvicorn[standard]==0.34.0
+jinja2==3.1.4
+
+# --- HTTP / API ---
+httpx>=0.25.0
+python-dotenv>=1.0.0
+
+# --- Machine learning ---
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# --- Visualization ---
+plotly>=5.17.0
+
+# --- GPU acceleration (optional) ---
+# cudf-pandas-cu12  # uncomment on GPU machine
+# cuml-cu12         # uncomment on GPU machine
+
+# --- Google Cloud ---
+google-cloud-storage>=2.10.0
+google-cloud-bigquery>=3.10.0
+db-dtypes>=1.0.0
+
+# --- AI (optional) ---
+google-generativeai>=0.8.0
+
+# --- Configuration ---
+pyyaml>=6.0
+
+# --- Testing ---
+pytest>=7.4.0
+pytest-cov>=4.1.0

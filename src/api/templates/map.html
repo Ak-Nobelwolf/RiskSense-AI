@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Hazard Map — RiskSense AI{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-2">Hazard Map &mdash; {{ location.name }} Region</h1>
+<p class="text-slate-500 mb-6">Showing <strong>{{ hazard_count }}</strong> active hazards</p>
+
+{% if hazards %}
+<div id="map" class="w-full rounded-xl border border-slate-200 shadow-sm" style="height: 500px;"></div>
+
+<div class="mt-6 bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Hazard List (by distance)</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-slate-400 uppercase text-xs tracking-wide border-b border-slate-200">
+                    <th class="pb-2 pr-4">Category</th>
+                    <th class="pb-2 pr-4">Title</th>
+                    <th class="pb-2 pr-4">Distance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hazards %}
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="py-2 pr-4">
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if h.category == 'Wildfires' %}bg-red-100 text-red-700
+                            {% elif h.category == 'Floods' %}bg-blue-100 text-blue-700
+                            {% elif h.category == 'Severe Storms' %}bg-purple-100 text-purple-700
+                            {% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {{ h.category }}
+                        </span>
+                    </td>
+                    <td class="py-2 pr-4 font-medium text-slate-700">{{ h.title }}</td>
+                    <td class="py-2 text-slate-500">{{ "%.1f"|format(h.distance_km) }} km</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const map = L.map('map').setView([{{ location.lat }}, {{ location.lon }}], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+L.marker([{{ location.lat }}, {{ location.lon }}])
+    .bindPopup('{{ location.name }}')
+    .addTo(map);
+
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 10000, color: 'green', fillOpacity: 0.05 }).addTo(map);
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 50000, color: 'orange', fillOpacity: 0.03 }).addTo(map);
+L.circle([{{ location.lat }}, {{ location.lon }}], { radius: 100000, color: 'red', fillOpacity: 0.02 }).addTo(map);
+
+const colors = {
+    'Wildfires': 'red', 'Severe Storms': 'purple', 'Floods': 'blue',
+    'Volcanoes': 'darkred', 'Dust and Haze': 'orange', 'Landslides': 'green',
+    'Droughts': 'beige', 'Extreme Temperature': 'pink'
+};
+
+const hazards = {{ hazards|tojson }};
+hazards.forEach(function(h) {
+    const color = colors[h.category] || 'gray';
+    L.marker([h.latitude, h.longitude], {
+        icon: L.divIcon({ className: '', html: '<div style="background:' + color + ';width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize: [12, 12], iconAnchor: [6, 6] })
+    }).bindPopup('<b>' + h.title + '</b><br>' + h.category).addTo(map);
+});
+</script>
+{% else %}
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+    <div class="text-4xl mb-3">📍</div>
+    <p class="text-amber-700">No active hazards currently.</p>
+</div>
+{% endif %}
+
+{% endblock %}

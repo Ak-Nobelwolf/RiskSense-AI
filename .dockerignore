@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.json
+.env
+data/
+start_server.py
+test_*.py
+*.md
+submission-deck-content.md
+~$*

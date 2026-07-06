@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Explain — RiskSense AI{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Risk Explanation &mdash; {{ location.name }}</h1>
+
+{% if current %}
+<div class="rounded-2xl p-6 text-center mb-8 recommendation-glow-{{ 'safe' if current.color == 'green' else 'caution' if current.color == 'orange' else 'avoid' }}"
+     style="background: linear-gradient(135deg, white 0%, {{ 'rgba(16,185,129,0.08)' if current.color == 'green' else 'rgba(245,158,11,0.08)' if current.color == 'orange' else 'rgba(239,68,68,0.08)' }} 100%); border: 2px solid {{ current.color }};">
+    <div class="text-5xl mb-2">{{ current.emoji }}</div>
+    <h2 class="text-2xl font-bold" style="color: {{ current.color }};">{{ current.recommendation }}</h2>
+    <p class="text-lg text-slate-500">Risk Score: <strong>{{ "%.0f"|format(current.score) }}/100</strong> &mdash; {{ current.band }}</p>
+</div>
+
+{% if explanation %}
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">Summary</h2>
+    <p class="text-slate-600 leading-relaxed">{{ explanation.summary }}</p>
+</div>
+
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">Top Contributing Factors</h2>
+    {% if explanation.reasons and explanation.reasons|length > 0 %}
+    <ol class="space-y-2">
+        {% for reason in explanation.reasons %}
+        <li class="flex items-start gap-3">
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold shrink-0 mt-0.5">{{ loop.index }}</span>
+            <span class="text-slate-600">{{ reason }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <p class="text-slate-400">No specific risk factors identified.</p>
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Confidence Score</div>
+        <div class="text-3xl font-bold text-slate-800">{{ "%.0f"|format(explanation.confidence * 100) }}%</div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Explanation Method</div>
+        <div class="text-3xl font-bold text-slate-800">
+            {% if explanation.provider == 'gemini' %}Gemini AI{% else %}Rule-based{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Risk Contribution Breakdown</h2>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="text-center p-4 bg-slate-50 rounded-lg">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Hazard</div>
+            <div class="text-2xl font-bold text-slate-800">{{ "%.1f"|format(current.component_hazard) }}</div>
+        </div>
+        <div class="text-center p-4 bg-slate-50 rounded-lg">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Proximity</div>
+            <div class="text-2xl font-bold text-slate-800">{{ "%.1f"|format(current.component_proximity) }}</div>
+        </div>
+        <div class="text-center p-4 bg-slate-50 rounded-lg">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Weather</div>
+            <div class="text-2xl font-bold text-slate-800">{{ "%.1f"|format(current.component_weather) }}</div>
+        </div>
+        <div class="text-center p-4 bg-slate-50 rounded-lg">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Trend</div>
+            <div class="text-2xl font-bold text-slate-800">{{ "%.1f"|format(current.component_trend) }}</div>
+        </div>
+        <div class="text-center p-4 bg-slate-50 rounded-lg">
+            <div class="text-slate-400 text-xs uppercase tracking-wide mb-1">Multi-Hazard</div>
+            <div class="text-2xl font-bold text-slate-800">{{ "%.1f"|format(current.component_multi_hazard) }}</div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+    <p class="text-amber-700">No risk data available.</p>
+</div>
+{% endif %}
+
+{% endblock %}

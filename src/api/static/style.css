@@ -1,0 +1,136 @@
+/* RiskSense AI — Field Station utilities */
+/* Colors use Tailwind classes everywhere; this file is for things Tailwind can't do. */
+
+body {
+  font-family: 'Barlow', system-ui, sans-serif;
+}
+
+[data-mono] {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+}
+
+h1, h2, h3, h4, h5, h6, nav a, label, .label {
+  font-family: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* --- instrument card --- */
+.instrument-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: box-shadow 0.2s ease;
+}
+
+/* --- hero panel --- */
+.hero-panel {
+  background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.04) 50%, transparent 100%);
+  animation: sweep 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* --- ambient bar --- */
+.ambient-bar {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  opacity: 0.12;
+  animation: drift 6s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* --- risk number --- */
+.risk-number {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(4rem, 12vw, 8rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+/* --- stat value --- */
+.stat-value {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* --- stat label --- */
+.stat-label {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+/* --- breakdown bar --- */
+.breakdown-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.breakdown-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease-in-out;
+}
+
+/* --- expandable --- */
+.expandable-content {
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+}
+
+.expandable-content.open {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/* --- status ring --- */
+.status-ring {
+  transition: stroke-dashoffset 1.5s ease-in-out;
+}
+
+/* --- scale mark --- */
+.scale-mark {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+/* --- responsive overrides --- */
+@media (max-width: 640px) {
+  .stat-value { font-size: 1.75rem; }
+  .risk-number { font-size: clamp(3rem, 15vw, 5rem); }
+}
