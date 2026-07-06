@@ -1,139 +1,358 @@
-# RiskSense AI — Outdoor Safety Decision Support
+# 🌍 RiskSense AI – AI Powered Outdoor Safety Decision Support
+![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google%20Cloud-4285F4?logo=googlecloud&logoColor=white)
+![BigQuery](https://img.shields.io/badge/BigQuery-4285F4?logo=googlebigquery&logoColor=white)
+![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?logo=googlecloud&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-AI-blue)
+![NVIDIA](https://img.shields.io/badge/NVIDIA-RAPIDS-76B900?logo=nvidia&logoColor=white)
+<p align="center">
 
 **Should I go outside now, later, or not today?**
 
-RiskSense AI is a deployed outdoor safety decision-support tool that combines hazard, weather, air-quality, and earthquake data into a single 0-100 risk score with short-term forecast output and plain-English guidance. It helps users make faster decisions about whether conditions are safe enough to go outside.
+*An AI-powered environmental risk intelligence platform built on Google Cloud with NVIDIA acceleration.*
 
-## Data Sources
+</p>
 
-| Source | Data | Access |
-|--------|------|--------|
-| **NASA EONET** | Active hazards (wildfires, floods, storms, volcanoes) | Free API, no key |
-| **OpenWeatherMap** | Weather 3h forecast + air pollution (PM2.5, PM10, O₃, CO, NO₂, SO₂) | Free tier, API key |
-| **USGS** | Real-time earthquakes worldwide | Free API, no key |
-| **Nominatim (OSM)** | Geocoding — any searchable location | Free API, no key |
+---
 
-## Architecture
+## 🚀 Live Demo
 
+🌐 **Application**
+
+https://risksense-ai-789818308989.asia-south1.run.app/
+
+---
+
+# 📖 About the Project
+
+Every day, millions of people make outdoor decisions based on incomplete information.
+
+They check:
+
+* 🌦 Weather apps
+* 🌫 Air Quality apps
+* 🔥 Wildfire alerts
+* 🌍 Earthquake reports
+* 📰 Local news
+
+RiskSense AI combines all these sources into **one intelligent decision-support platform** that answers a single question:
+
+> **"Is it safe to go outside?"**
+
+The platform collects live environmental data, processes it through an explainable risk engine, predicts future conditions using Machine Learning, and presents everything in an interactive dashboard with a unified **0–100 Environmental Risk Score**.
+
+#### The application is fully deployed on Google Cloud Run and is publicly accessible through the live demo.
+---
+
+# 🎯 Problem Statement
+
+People currently rely on multiple disconnected applications to determine outdoor safety.
+
+RiskSense AI eliminates this fragmentation by combining:
+
+* Weather
+* Air Quality
+* Wildfires
+* Volcanoes
+* Earthquakes
+* Severe Storms
+
+into a single environmental intelligence platform with actionable recommendations.
+
+---
+
+# 🌍 Real-world Impact
+
+RiskSense AI helps:
+
+* 🚶 Daily commuters
+* 🏃 Runners & cyclists
+* 👨‍👩‍👧 Parents planning outdoor activities
+* 🎪 Event organizers
+* ✈️ Travelers
+* 👴 Elderly & respiratory-sensitive individuals
+
+Instead of checking several apps, users receive one clear recommendation within seconds.
+
+---
+
+# 📸 Application Screenshots
+
+## Home Page
+
+![Home Page](Images/home-page.png)
+
+---
+
+## Environmental Risk Score
+
+![Risk Score](Images/risk-score.png)
+
+---
+
+## Weather and Interactive Hazard Map
+
+![Weather and Interactive Hazard Map](Images/hazard-map.png)
+
+---
+
+## Air Quality and AI Summary
+
+![Air Quality and AI Summary](Images/air-quality.png)
+
+---
+
+## Forecast and Score Contribution
+
+![Forecast and Score Contribution](Images/forecast-score-contribution.png)
+
+---
+
+## Weather Conditions
+
+![Weather Conditions](Images/weather-conditions.png)
+
+---
+
+# ✨ Key Features
+
+* 🌍 Worldwide location search
+* ⚠️ Unified 0–100 Environmental Risk Score
+* 🔥 Multi-hazard monitoring
+* 🌫 Air Quality Dashboard
+* 🌦 Live Weather Monitoring
+* 🌍 Interactive Hazard Map
+* 📈 6-hour & 12-hour Machine Learning Forecast
+* 🤖 Gemini-powered AI explanations
+* ⚡ Live pipeline progress (Server-Sent Events)
+* ☁️ Google Cloud deployment
+* 🚀 NVIDIA RAPIDS GPU acceleration
+* 📊 Interactive dashboard with charts and maps
+
+---
+
+# 🔄 How It Works
+
+1. User searches for any location.
+2. The application geocodes the location.
+3. Environmental data is collected from NASA EONET, OpenWeatherMap, and USGS.
+4. Data is cleaned, validated, and transformed.
+5. NVIDIA RAPIDS cuDF accelerates feature engineering.
+6. The risk engine calculates a 0–100 environmental risk score.
+7. A Random Forest model predicts the next 6-hour and 12-hour risk.
+8. Gemini generates a natural-language explanation.
+9. Results are displayed on an interactive dashboard.
+
+# 📊 Data Sources
+
+| Source                    | Data                                          |
+| ------------------------- | --------------------------------------------- |
+| NASA EONET                | Wildfires, Volcanoes, Storms, Natural Hazards |
+| OpenWeatherMap            | Weather Forecast & Air Quality                |
+| USGS                      | Earthquake Data                               |
+| Nominatim (OpenStreetMap) | Worldwide Geocoding                           |
+
+---
+
+# 🏗️ Solution Architecture
+
+```mermaid
+flowchart TD
+
+A[User Search]
+--> B[Nominatim]
+
+B --> C[NASA EONET]
+B --> D[OpenWeatherMap]
+B --> E[USGS]
+
+C --> F[Data Ingestion]
+D --> F
+E --> F
+
+F --> G[Cloud Storage]
+
+G --> H[BigQuery]
+
+H --> I[NVIDIA RAPIDS cuDF]
+
+I --> J[Risk Engine]
+
+J --> K[Random Forest]
+
+K --> L[Gemini]
+
+L --> M[FastAPI Dashboard]
+
+M --> N[Cloud Run]
 ```
-EONET ─┐
-OWM    ├── ingestion → validate → feature engineering → risk scoring → forecast → explanation → FastAPI dashboard
-USGS ──┘
-         ↓                          ↓
-   Cloud Storage (Parquet)    BigQuery (serverless SQL)
+
+
+---
+
+# ⚙️ Technology Stack
+
+## ☁️ Google Cloud
+
+* Cloud Run
+* BigQuery
+* Cloud Storage
+* Gemini API
+
+## 🚀 NVIDIA
+
+* RAPIDS cuDF
+* cudf.pandas
+
+## 🤖 Machine Learning
+
+* Random Forest Regression
+* Scikit-learn
+
+## 🌐 Backend
+
+* Python
+* FastAPI
+* Uvicorn
+
+## 📊 Frontend
+
+* Jinja2
+* Tailwind CSS
+* Plotly
+* Leaflet
+
+---
+
+## 🔄 End-to-End Decision Pipeline
+
+```mermaid
+flowchart LR
+
+A["👤 User<br/>Search Location"]
+
+--> B["🌍 Geocoding"]
+
+--> C["🌦️ Weather
+🌫️ Air Quality
+🔥 Hazards
+🌍 Earthquakes"]
+
+--> D["☁️ Cloud Storage"]
+
+--> E["📊 BigQuery"]
+
+--> F["⚡ NVIDIA RAPIDS cuDF
+Feature Engineering"]
+
+--> G["🎯 Risk Scoring
+0–100"]
+
+--> H["📈 Random Forest
+6h & 12h Forecast"]
+
+--> I["🤖 Gemini AI
+Recommendation"]
+
+--> J["📊 Interactive Dashboard"]
 ```
+---
 
-- **Ingestion**: Fetch → normalize → store Parquet + load to BigQuery
-- **Storage**: Local Parquet + GCS backup (cloud) or DuckDB (local dev)
-- **Scoring**: Explainable rule-based formula (0–100, 6 components)
-- **Forecast**: Random Forest predicting 6h and 12h risk
-- **Explanation**: Rule-based (default) or Gemini API (optional)
-- **Dashboard**: FastAPI + Jinja2 + Plotly + Leaflet + Tailwind
-- **Deployment**: Local (uvicorn) or Cloud Run (serverless, free tier)
+# 📂 Project Structure
 
-## Project Structure
-
-```
+```text
 project-root/
-├── configs/settings.yaml      # Tunable parameters
-├── .env.example               # Environment variable template
-├── Dockerfile                 # Cloud Run container
-├── requirements.txt           # Python dependencies
+│
+├── configs/
 ├── src/
-│   ├── api/                   # FastAPI server + templates + static
-│   │   ├── routes.py          # All HTTP endpoints
-│   │   ├── app.py             # FastAPI app factory
-│   │   ├── pipeline_stream.py # SSE pipeline progress
-│   │   ├── templates/         # Jinja2 HTML
-│   │   └── static/            # CSS, JS, images
-│   ├── ingestion/             # API fetchers + GCS client
-│   │   ├── eonet_fetcher.py   # NASA EONET
-│   │   ├── weather_fetcher.py # OpenWeatherMap
-│   │   ├── air_quality_fetcher.py
-│   │   ├── usgs_fetcher.py    # Earthquakes
-│   │   ├── gcs_client.py      # Google Cloud Storage
-│   │   └── storage_writer.py  # Local + GCS parquet I/O
-│   ├── transform/             # Clean, validate, spatial
-│   ├── features/              # Feature engineering + scoring
-│   ├── model/                 # Train + predict (6h/12h)
-│   ├── explain/               # Rule-based + Gemini explainer
-│   ├── database.py            # DuckDB/BigQuery dispatch
-│   ├── database_bq.py         # BigQuery DDL + loads + queries
-│   └── dashboard/             # Dashboard data loaders
-├── data/                      # Local parquet cache (gitignored)
-└── sql/                       # DuckDB schemas (local dev only)
+│    ├── api/     # FastAPI routes and templates
+│    ├── ingestion/    # API connectors
+│    ├── features/     # Feature engineering
+│    ├── model/        # ML forecasting
+│    ├── explain/      # Gemini integration
+│    ├── dashboard/    # Visualization
+│
+├── data/
+├── sql/
+├── Images/
+├── Dockerfile
+├── requirements.txt
+└── README.md
 ```
 
-## What It Does
+---
 
-- Lets a user search any location and see a current safety assessment
-- Ingests live hazard, weather, air-quality, and earthquake data
-- Builds features, scores risk, and generates 6h/12h forecast output
-- Renders an interactive dashboard with a hazard map, charts, and a risk summary
-- Uses Gemini API for AI-generated explanations when available, with a rule-based fallback
+# 🌐 API Endpoints
 
-## Built With
+| Endpoint                | Description                    |
+| ----------------------- | ------------------------------ |
+| GET /                   | Dashboard                      |
+| GET /map                | Interactive Hazard Map         |
+| GET /forecast           | Risk Forecast                  |
+| GET /explanation        | AI Recommendation              |
+| GET /benchmark          | Performance Comparison         |
+| GET /api/current        | Current Risk Score             |
+| GET /api/forecast       | Forecast JSON                  |
+| POST /api/refresh       | Refresh Environmental Pipeline |
+| GET /api/refresh/stream | Live Pipeline Progress         |
 
-- **FastAPI** for the web app and API layer
-- **Jinja2** for server-rendered templates
-- **Plotly** for time-series charts
-- **Leaflet** for the interactive hazard map
-- **Tailwind CSS** for the UI styling
-- **Pandas / NumPy** for data processing
-- **scikit-learn** for the forecast model
-- **DuckDB** for local analytics support
-- **BigQuery** and **Cloud Storage** for Google Cloud storage and analytics support
-- **NASA EONET**, **OpenWeatherMap**, **USGS**, and **Nominatim** as data sources
-- **Gemini API** for AI-generated explanations
+---
 
-### Pipeline Steps
+# ☁️ Cloud Deployment
 
-The `/api/refresh` endpoint runs the full pipeline in order:
-1. Create BigQuery/DuckDB tables (idempotent)
-2. Ingest EONET events → load to database
-3. Ingest weather, air quality, earthquakes → save Parquet
-4. Load all ingested data to database
-5. Build features → score risk → predict 6h/12h → generate explanations
+RiskSense AI is fully deployed on **Google Cloud Run**.
 
-## API Endpoints
+Google Cloud services used:
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /` | Dashboard overview (risk, weather, hazards, charts) |
-| `GET /map` | Full-screen hazard map |
-| `GET /forecast` | Risk forecast charts |
-| `GET /explanation` | AI/rule-based explanation |
-| `GET /benchmark` | CPU vs BigQuery speed comparison |
-| `GET /api/current` | Current risk score JSON |
-| `GET /api/forecast` | Forecast data JSON |
-| `POST /api/refresh` | Trigger full pipeline for a location |
-| `GET /api/refresh/stream` | SSE streaming pipeline progress |
+* ✅ Cloud Run
+* ✅ BigQuery
+* ✅ Cloud Storage
+* ✅ Gemini API
 
-## Benchmark
+The application automatically provisions datasets, stores processed environmental data in BigQuery and Cloud Storage, and scales serverlessly based on user demand.
 
-RiskSense AI can run on local DuckDB (CPU) or Cloud BigQuery:
+---
 
-| Task | DuckDB | BigQuery | Speedup |
-|------|--------|----------|---------|
-| Data loading | ~0.3s | ~1.2s | 0.25× |
-| Query (100 rows) | ~0.001s | ~0.4s | 0.002× |
-| Full pipeline (incl. API calls) | ~25s | ~30s | 0.83× |
+# 🚀 NVIDIA Acceleration
 
-These benchmark values are simulated in the app UI to illustrate the relative tradeoff between local DuckDB and cloud BigQuery paths. BigQuery adds network latency per query, but scales to much larger datasets and requires zero local infrastructure.
+RiskSense AI uses **NVIDIA RAPIDS cuDF (cudf.pandas)** to accelerate feature engineering and data processing.
 
-## Cloud Deployment
+With a single configuration change (`CUDF_USE_PANDAS=true`), the application can execute pandas-based workloads on NVIDIA GPUs, significantly reducing processing time for large environmental datasets while maintaining the same codebase.
 
-Deploys to Cloud Run (free tier: 2M requests/month). Tables created on first request. Data persisted in BigQuery + GCS across container restarts.
+---
 
-## Testing
+# 🎯 Why RiskSense AI?
 
-```bash
-pytest tests/ -v
-```
+✅ Real-world problem
 
-## Limitations
+✅ Decision-support application
 
-- **Batch refresh**: Not real-time; manual or cron-triggered pipeline
-- **Simple forecast**: Random Forest baseline; no deep learning
-- **API dependency**: EONET, OpenWeatherMap availability affects pipeline
-- **No user auth**: Single-user dashboard
+✅ Multi-source environmental analytics
+
+✅ Machine Learning forecasting
+
+✅ Explainable AI recommendations
+
+✅ Google Cloud native deployment
+
+✅ NVIDIA GPU acceleration
+
+---
+
+# 🚀 Future Enhancements
+
+* Mobile application
+* Personalized alerts
+* Historical trend analytics
+* Vertex AI integration
+* IoT sensor support
+* Real-time streaming updates
+* User authentication
+* Multi-language AI recommendations
+
+---
+
+# 📄 License
+
+This project was developed as part of the **Google Cloud × NVIDIA AI Hackathon** and is intended for educational, research, and demonstration purposes.
