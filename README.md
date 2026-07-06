@@ -77,6 +77,12 @@ Instead of checking several apps, users receive one clear recommendation within 
 
 ---
 
+# 🎥 Demo Video
+
+![Demo Video](Images/Risk-Sense-AI-Demo.mp4)
+
+---
+
 # 📸 Application Screenshots
 
 ## Home Page
