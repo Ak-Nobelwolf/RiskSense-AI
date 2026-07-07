@@ -58,7 +58,7 @@ def load_eonet_raw() -> pd.DataFrame:
 
 def load_earthquake_raw(location: str | None = None) -> pd.DataFrame:
     if database_bq.is_available():
-        return database_bq.query("SELECT * FROM raw_earthquakes ORDER BY time DESC")
+        return database_bq.query("SELECT * FROM raw_earthquakes ORDER BY timestamp DESC")
     if location is None:
         files = sorted(RAW_DIR.glob("earthquakes_*.parquet"))
     else:

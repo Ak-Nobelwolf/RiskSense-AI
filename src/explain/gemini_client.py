@@ -42,11 +42,11 @@ def explain_with_gemini(row: dict) -> dict | None:
     try:
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         prompt = _build_prompt(row)
         response = model.generate_content(prompt)
         text = response.text.strip()
-        text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         result = json.loads(text)
         logger.info("Gemini explanation generated successfully")
         return result

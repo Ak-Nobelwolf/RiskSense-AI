@@ -5,12 +5,11 @@
 ![BigQuery](https://img.shields.io/badge/BigQuery-4285F4?logo=googlebigquery&logoColor=white)
 ![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?logo=googlecloud&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Gemini-AI-blue)
-![NVIDIA](https://img.shields.io/badge/NVIDIA-RAPIDS-76B900?logo=nvidia&logoColor=white)
 <p align="center">
 
 **Should I go outside now, later, or not today?**
 
-*An AI-powered environmental risk intelligence platform built on Google Cloud with NVIDIA acceleration.*
+*An AI-powered environmental risk intelligence platform built on Google Cloud.*
 
 </p>
 
@@ -133,7 +132,6 @@ Instead of checking several apps, users receive one clear recommendation within 
 * 🤖 Gemini-powered AI explanations
 * ⚡ Live pipeline progress (Server-Sent Events)
 * ☁️ Google Cloud deployment
-* 🚀 NVIDIA RAPIDS GPU acceleration
 * 📊 Interactive dashboard with charts and maps
 
 ---
@@ -144,11 +142,10 @@ Instead of checking several apps, users receive one clear recommendation within 
 2. The application geocodes the location.
 3. Environmental data is collected from NASA EONET, OpenWeatherMap, and USGS.
 4. Data is cleaned, validated, and transformed.
-5. NVIDIA RAPIDS cuDF accelerates feature engineering.
-6. The risk engine calculates a 0–100 environmental risk score.
-7. A Random Forest model predicts the next 6-hour and 12-hour risk.
-8. Gemini generates a natural-language explanation.
-9. Results are displayed on an interactive dashboard.
+5. The risk engine calculates a 0–100 environmental risk score.
+6. A Random Forest model predicts the next 6-hour and 12-hour risk.
+7. Gemini generates a natural-language explanation.
+8. Results are displayed on an interactive dashboard.
 
 # 📊 Data Sources
 
@@ -181,17 +178,15 @@ F --> G[Cloud Storage]
 
 G --> H[BigQuery]
 
-H --> I[NVIDIA RAPIDS cuDF]
+H --> I[Risk Engine]
 
-I --> J[Risk Engine]
+I --> J[Random Forest]
 
-J --> K[Random Forest]
+J --> K[Gemini]
 
-K --> L[Gemini]
+K --> L[FastAPI Dashboard]
 
-L --> M[FastAPI Dashboard]
-
-M --> N[Cloud Run]
+L --> M[Cloud Run]
 ```
 
 
@@ -205,11 +200,6 @@ M --> N[Cloud Run]
 * BigQuery
 * Cloud Storage
 * Gemini API
-
-## 🚀 NVIDIA
-
-* RAPIDS cuDF
-* cudf.pandas
 
 ## 🤖 Machine Learning
 
@@ -249,10 +239,7 @@ A["👤 User<br/>Search Location"]
 
 --> E["📊 BigQuery"]
 
---> F["⚡ NVIDIA RAPIDS cuDF
-Feature Engineering"]
-
---> G["🎯 Risk Scoring
+--> F["🎯 Risk Scoring
 0–100"]
 
 --> H["📈 Random Forest
@@ -271,19 +258,27 @@ Recommendation"]
 project-root/
 │
 ├── configs/
-├── src/
-│    ├── api/     # FastAPI routes and templates
-│    ├── ingestion/    # API connectors
-│    ├── features/     # Feature engineering
-│    ├── model/        # ML forecasting
-│    ├── explain/      # Gemini integration
-│    ├── dashboard/    # Visualization
-│
 ├── data/
-├── sql/
 ├── Images/
+├── models/
+├── sql/
+├── src/
+│   ├── api/                  # FastAPI routes & templates
+│   ├── dashboard/            # Charts & visualization
+│   ├── explain/              # Gemini AI integration
+│   ├── features/             # Feature engineering
+│   ├── ingestion/            # API connectors (EONET, OWM, USGS)
+│   ├── model/                # ML forecasting
+│   ├── transform/            # Data transformation
+│   ├── database.py           # DuckDB layer
+│   └── database_bq.py        # BigQuery layer
+├── .dockerignore
+├── .env.example
+├── .gcloudignore
+├── .gitignore
 ├── Dockerfile
 ├── requirements.txt
+├── start_server.py
 └── README.md
 ```
 
@@ -320,11 +315,11 @@ The application automatically provisions datasets, stores processed environmenta
 
 ---
 
-# 🚀 NVIDIA Acceleration
+# 🚀 Scalability & Acceleration
 
-RiskSense AI uses **NVIDIA RAPIDS cuDF (cudf.pandas)** to accelerate feature engineering and data processing.
+RiskSense AI is deployed on **Google Cloud Run** (serverless containers without GPU access). For this reason, **BigQuery** handles large-scale data processing natively — parallelizing queries across thousands of slots without hardware dependencies.
 
-With a single configuration change (`CUDF_USE_PANDAS=true`), the application can execute pandas-based workloads on NVIDIA GPUs, significantly reducing processing time for large environmental datasets while maintaining the same codebase.
+The codebase includes optional **NVIDIA RAPIDS cuDF** integration for GPU-accelerated feature engineering when running in GPU-equipped environments (e.g., local workstations or GKE with GPU nodes), but in the production Cloud Run deployment, BigQuery serves as the scalable compute layer.
 
 ---
 
@@ -341,8 +336,6 @@ With a single configuration change (`CUDF_USE_PANDAS=true`), the application can
 ✅ Explainable AI recommendations
 
 ✅ Google Cloud native deployment
-
-✅ NVIDIA GPU acceleration
 
 ---
 

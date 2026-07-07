@@ -278,6 +278,9 @@ def load_feature_table(df: pd.DataFrame, table_name: str) -> int:
         return 0
     client = _get_client()
     table_id = _tid(table_name)
+    df = df.copy()
+    if table_name == "fact_environment_risk" and "location_id" not in df.columns:
+        df["location_id"] = 1
     job = client.load_table_from_dataframe(df, table_id, job_config=_load_job_config())
     job.result()
     logger.info("Loaded %d rows into BigQuery %s", len(df), table_name)
